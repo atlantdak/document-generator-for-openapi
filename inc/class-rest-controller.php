@@ -88,16 +88,16 @@ class RestController {
     }
 
 	/**
-	 * @param string $namespace
+	 * @param  string  $namespace
 	 *
 	 * @return array
 	 */
-	private function get_data_for_routes( $namespace ){
+	private function get_data_for_routes( $namespace ) {
 		//get wordpress rest schema
 		$routes = rest_get_server()->get_routes( $namespace );
 		//unset root endpoint for excluding from documentation
 		$rootRoute = '/' . $namespace;
-		unset( $routes[$rootRoute] );
+		unset( $routes[ $rootRoute ] );
 
 		return rest_get_server()->get_data_for_routes( $routes, 'help' );
 	}

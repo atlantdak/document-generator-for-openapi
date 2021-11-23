@@ -20,7 +20,7 @@ class Generator3_1_0 extends GeneratorBase {
     }
 
     public function generateDocument() {
-        return apply_filters( 'openapi_generator_v3_1', $this->generateRoot(), $this );
+	    return apply_filters( 'openapi_generator_v3_1', $this->generateRoot(), $this );
     }
 
     public function generateRoot () {
@@ -114,11 +114,10 @@ class Generator3_1_0 extends GeneratorBase {
         return $substitutions;
     }
 
-	public function generateTagFromSchemaTitle( $endpoint )
-	{
-		$tag = '';
-		$parts = explode('/', trim($endpoint, '/'));
-		if ( isset( $parts[0] ) ){
+	public function generateTagFromSchemaTitle( $endpoint ) {
+		$tag   = '';
+		$parts = explode( '/', trim( $endpoint, '/' ) );
+		if ( isset( $parts[0] ) ) {
 			$tag = explode( '-', $parts[0] );
 			$tag = array_map( 'ucfirst', $tag );
 			$tag = implode( ' / ', $tag );
