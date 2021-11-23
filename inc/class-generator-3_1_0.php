@@ -6,6 +6,11 @@ class Generator3_1_0 extends GeneratorBase {
 
     protected $components = ['schemas' => []];
 
+	/**
+	 * Array of all tags for all endpoints
+	*/
+	protected $tags = array();
+
     public $extractCommonTypes = false;    
 
     public function __construct( $namespace, $routes, $extractCommonTypes ) {
@@ -22,10 +27,19 @@ class Generator3_1_0 extends GeneratorBase {
         $result = [
             'openapi' => '3.1.0',
             'info' => $this->generateInfo(),
-            'jsonSchemaDialect' => 'http://json-schema.org/draft-04/schema#',
             'servers' => $this->generateServers(),
             'paths' => $this->generatePaths(),
-            'security' => $this->generateSecurity()
+            'security' => $this->generateSecurity(),
+	        /**
+	         * The order of tags determines the displayed order in the documentation.
+	         *
+	         * @param array[] [ 'name' => string, 'description' => string ]
+	         */
+            'tags' => array_values( apply_filters( 'document_generator_openapi_tags', $this->tags ) ),
+	        'externalDocs' => array(
+				'description' => '',
+                'url' => ''
+		    )
         ];
 
         if ( !empty( $this->components ) ) {
@@ -67,9 +81,16 @@ class Generator3_1_0 extends GeneratorBase {
             $substitutions = $this->getSubstitutions( $url );
 
             //replace all regex substituions with OpenAPI substitutions
-            $url = preg_replace( '/\(\?P\<(.*?)\>.*?\)(\/|$)/', '{$1}$2', $url );  
+            $url = preg_replace( '/\(\?P\<(.*?)\>.*?\)(\/|$)/', '{$1}$2', $url );
+	        $routePathItem = $this->generatePathItem( $spec, $substitutions );
 
-            $result[ $url ] = $this->generatePathItem( $spec, $substitutions );
+			/**
+			 * Filter OpenAPI Paths Object Item
+			 * You can add summary and description for each paths item
+			 *
+			 * @param  $routePathItem
+			 */
+            $result[ $url ] = apply_filters( "openapi_generator_v3_1_path_{$url}" , $routePathItem );
         }
 
         return $result;
@@ -93,9 +114,26 @@ class Generator3_1_0 extends GeneratorBase {
         return $substitutions;
     }
 
+	public function generateTagFromSchemaTitle( $endpoint )
+	{
+		$tag = '';
+		$parts = explode('/', trim($endpoint, '/'));
+		if ( isset( $parts[0] ) ){
+			$tag = explode( '-', $parts[0] );
+			$tag = array_map( 'ucfirst', $tag );
+			$tag = implode( ' / ', $tag );
+			$tag = strtr( $tag, '_', ' ' );
+		}
+
+		return $tag;
+	}
+
     public function generatePathItem( $spec, $substitutions ) {
         
         $result = [];
+
+	    $tag = $this->generateTagFromSchemaTitle( $spec['schema']['title'] );
+	    $this->tags[$tag] = array( 'name' => $tag );
 
         foreach ( $spec['endpoints'] as $endpoint ) {
             $parameters = [];
@@ -110,6 +148,9 @@ class Generator3_1_0 extends GeneratorBase {
             foreach ( $endpoint['methods'] as $methodName ) {
 
                 $method = [
+					'description' => isset( $description ) ? $description : '',
+					'summary' => isset( $summary ) ? $summary : '',
+					'tags' => array( $tag ),
                     'parameters' => $parameters,
                     'responses' => [
                         '200' => ['description' => 'OK'],

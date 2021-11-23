@@ -50,15 +50,11 @@ class RestController {
                                                 'document-generator-for-openapi' ),
                                     [ 'status' => 400 ] );
         }
-
-        //get wordpress rest schema
-        $routes = rest_get_server()->get_routes( $request['namespace'] );
-        
-        $data = rest_get_server()->get_data_for_routes( $routes, 'help' );
+		$routes = $this->get_data_for_routes( $namespace );
 
         //generate openapi document
         //TODO create factory for switching between version
-        $generator = new Generator3_1_0( $namespace, $data, $extract_common_types );
+        $generator = new Generator3_1_0( $namespace, $routes, $extract_common_types );
         $result = $generator->generateDocument();
         
         return rest_ensure_response($result);
@@ -90,4 +86,19 @@ class RestController {
         ];
 
     }
+
+	/**
+	 * @param string $namespace
+	 *
+	 * @return array
+	 */
+	private function get_data_for_routes( $namespace ){
+		//get wordpress rest schema
+		$routes = rest_get_server()->get_routes( $namespace );
+		//unset root endpoint for excluding from documentation
+		$rootRoute = '/' . $namespace;
+		unset( $routes[$rootRoute] );
+
+		return rest_get_server()->get_data_for_routes( $routes, 'help' );
+	}
 }
