@@ -2,8 +2,6 @@
 
 namespace OpenAPIGenerator;
 
-use function Sodium\randombytes_buf;
-
 class Generator3_1_0 extends GeneratorBase {
 
     protected $components = ['schemas' => []];
