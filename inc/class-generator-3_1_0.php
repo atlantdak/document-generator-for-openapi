@@ -2,6 +2,8 @@
 
 namespace OpenAPIGenerator;
 
+use function Sodium\randombytes_buf;
+
 class Generator3_1_0 extends GeneratorBase {
 
     protected $components = ['schemas' => []];
@@ -10,6 +12,11 @@ class Generator3_1_0 extends GeneratorBase {
 	 * Array of all tags for all endpoints
 	*/
 	protected $tags = array();
+
+	/**
+	 * Array of all operationIds for all endpoints
+	*/
+	protected $operationIds = array();
 
     public $extractCommonTypes = false;    
 
@@ -150,6 +157,7 @@ class Generator3_1_0 extends GeneratorBase {
 					'description' => isset( $description ) ? $description : '',
 					'summary' => isset( $summary ) ? $summary : '',
 					'tags' => array( $tag ),
+	                'operationId' => $this->generateOperationId( $methodName, $tag, $substitutions ),
                     'parameters' => $parameters,
                     'responses' => [
                         '200' => ['description' => 'OK'],
@@ -291,5 +299,26 @@ class Generator3_1_0 extends GeneratorBase {
     public function generateSecurity() {
         return [];
     }
+
+	private function generateOperationId( $methodName, $tag, $substitutions ){
+		$operationId = strtolower( $methodName ) . $tag;
+		if ( count( $substitutions ) ) {
+			$keys = array_flip( $substitutions );
+			$keysString = implode( '_', $keys );
+			$operationId .= '_' . $keysString;
+		}
+		$operationId = str_replace( ' ', '', ucwords( str_replace( '_', ' ', $operationId ) ) );
+		if ( in_array( $operationId, $this->operationIds ) ) {
+			$i = 1;
+			while ( in_array( $operationId . '_' . $i, $this->operationIds ) ) {
+				$i ++;
+			}
+			$operationId .= '_' . $i;
+		}
+
+		$this->operationIds[] = $operationId;
+
+		return $operationId;
+	}
 
 }
